@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tetrisy - ブロックパズルゲーム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Tetrisy</h1>
+        </header>
+
+        <div class="game-area">
+            <div class="side-panel left-panel">
+                <div class="info-box">
+                    <h3>スコア</h3>
+                    <div id="score" class="value">0</div>
+                </div>
+                <div class="info-box">
+                    <h3>ライン</h3>
+                    <div id="lines" class="value">0</div>
+                </div>
+                <div class="info-box">
+                    <h3>レベル</h3>
+                    <div id="level" class="value">1</div>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="gameCanvas" width="300" height="600"></canvas>
+                <div id="gameOver" class="game-over hidden">
+                    <h2>ゲームオーバー</h2>
+                    <p>スコア: <span id="finalScore">0</span></p>
+                    <button id="restartBtn" class="btn-restart">もう一度プレイ</button>
+                </div>
+                <div id="pauseOverlay" class="pause-overlay hidden">
+                    <h2>一時停止</h2>
+                    <p>Pキーで再開</p>
+                </div>
+            </div>
+
+            <div class="side-panel right-panel">
+                <div class="info-box">
+                    <h3>NEXT</h3>
+                    <canvas id="nextCanvas" width="120" height="120"></canvas>
+                </div>
+                <div class="info-box controls-help">
+                    <h3>操作</h3>
+                    <p>← → : 移動</p>
+                    <p>↑ : 回転</p>
+                    <p>↓ : 落下</p>
+                    <p>Space : 即落下</p>
+                    <p>P : 一時停止</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- モバイル用コントロールボタン -->
+        <div class="mobile-controls" id="mobileControls">
+            <div class="controls-row">
+                <button class="control-btn" id="btnLeft">◀</button>
+                <button class="control-btn" id="btnRotate">🔄</button>
+                <button class="control-btn" id="btnRight">▶</button>
+            </div>
+            <div class="controls-row">
+                <button class="control-btn" id="btnDown">▼</button>
+                <button class="control-btn control-btn-wide" id="btnDrop">DROP</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
