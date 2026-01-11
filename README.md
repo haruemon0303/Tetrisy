@@ -1,11 +1,11 @@
-# Tetrisy
+# Block Drop Puzzle
 
 ブラウザで動作するブロックパズルゲーム（テトリス風）。外部依存なしの純粋なHTML/CSS/JavaScriptで実装されています。
 
 ## 特徴
 
 - 📱 **完全レスポンシブ対応** - PCからスマートフォンまで快適にプレイ可能
-- 🎮 **直感的な操作** - キーボードとタッチ操作の両方に対応
+- 🎮 **洗練された操作感** - DAS/ARR実装、ロック遅延による気持ちいい操作
 - 🎯 **7バッグ方式** - 公平なブロック生成システム
 - 🚀 **依存なし** - CDNや外部ライブラリ不要
 - 🔒 **プライバシー重視** - データ収集なし、外部通信なし
@@ -31,26 +31,32 @@
 ## 操作方法
 
 ### キーボード操作
-- **← →** : ブロックを左右に移動
+- **← →** : ブロックを左右に移動（長押しで連続移動、DAS/ARR対応）
 - **↑** : ブロックを時計回りに回転
-- **↓** : ブロックを高速落下（ソフトドロップ）
+- **↓** : ブロックを高速落下（ソフトドロップ、押している間50ms/step）
 - **Space** : ブロックを即座に落下（ハードドロップ）
 - **P** : 一時停止/再開
 
 ### タッチ操作（モバイル）
 画面下部のボタンで操作できます：
-- **◀ ▶** : 左右移動
+- **◀ ▶** : 左右移動（長押しで連続移動）
 - **🔄** : 回転
 - **▼** : 高速落下
 - **DROP** : 即座に落下
+
+### 操作感の特徴
+- **DAS（Delayed Auto Shift）**: 150ms - 長押し開始までの遅延
+- **ARR（Auto Repeat Rate）**: 50ms - 連続移動の間隔
+- **ロック遅延**: 500ms - 接地後に操作できる猶予時間
+- **回転クールダウン**: 150ms - 連打防止
 
 ## プレイ方法
 
 ### ローカルで遊ぶ
 1. このリポジトリをクローンまたはダウンロード
    ```bash
-   git clone https://github.com/yourusername/Tetrisy.git
-   cd Tetrisy
+   git clone https://github.com/yourusername/Block-Drop-Puzzle.git
+   cd Block-Drop-Puzzle
    ```
 
 2. `index.html` をブラウザで開く
@@ -67,13 +73,13 @@
    - Branch: `main` (または `master`)
    - Folder: `/ (root)`
 5. **Save** をクリック
-6. 数分後、`https://yourusername.github.io/Tetrisy/` でアクセス可能になります
+6. 数分後、`https://yourusername.github.io/Block-Drop-Puzzle/` でアクセス可能になります
 
 #### 方法2: コマンドラインから
 ```bash
 # 変更をコミット
 git add .
-git commit -m "Add Tetrisy game"
+git commit -m "Add Block Drop Puzzle game"
 
 # メインブランチにプッシュ
 git push origin main
@@ -95,10 +101,10 @@ git push origin gh-pages
 ## ファイル構成
 
 ```
-Tetrisy/
+Block-Drop-Puzzle/
 ├── index.html      # メインHTMLファイル
-├── style.css       # スタイルシート
-├── script.js       # ゲームロジック
+├── style.css       # スタイルシート（レスポンシブUI）
+├── script.js       # ゲームロジック（DAS/ARR、ロック遅延実装）
 └── README.md       # このファイル
 ```
 
@@ -128,6 +134,21 @@ Tetrisy/
 
 オリジナルのテトリスは1984年にアレクセイ・パジトノフによって作成されました。このプロジェクトはテトリスにインスパイアされたオリジナル実装です。
 
+## 更新履歴
+
+### v1.1 - 操作感の大幅改善
+- タイトルを「Block Drop Puzzle」に変更
+- DAS/ARR実装（長押しで滑らかな連続移動）
+- ロック遅延実装（接地後500msの猶予時間）
+- 落下速度の調整（レベル1: 700ms、レベルごとに85ms短縮）
+- ソフトドロップを50ms/stepに高速化
+- 回転の連打防止（150msクールダウン）
+- モバイルボタンのサイズと間隔を改善
+- iPhoneのsafe-area対応
+
+### v1.0 - 初期リリース
+- 基本的なテトリス風ゲームの実装
+
 ---
 
-**Enjoy playing Tetrisy!** 🎮✨
+**Enjoy playing Block Drop Puzzle!** 🎮✨

@@ -62,9 +62,60 @@ let level = 1;
 let gameOver = false;
 let isPaused = false;
 let dropCounter = 0;
-let dropInterval = 1000;
+let dropInterval = 700; // レベル1は700ms
 let lastTime = 0;
 let bag = [];
+
+// 操作感の改善用
+let keys = {
+    left: false,
+    right: false,
+    down: false
+};
+let dasTimer = 0; // Delayed Auto Shift タイマー
+let dasDelay = 150; // DAS開始まで150ms
+let arrCounter = 0; // Auto Repeat Rate カウンター
+let arrInterval = 50; // ARR間隔50ms
+let lastRotateTime = 0;
+let rotateCooldown = 150; // 回転クールダウン
+
+// ロック遅延
+let lockTimer = 0;
+let lockDelay = 500; // 接地後500msで固定
+let isGrounded = false;
+let lockResets = 0;
+let maxLockResets = 15; // 無限回避防止
+
+// ソフトドロップ速度
+let softDropInterval = 50;
+
+// タッチボタンのセットアップ（DAS/ARR対応）
+function setupTouchButton(btnId, direction) {
+    const btn = document.getElementById(btnId);
+    const key = direction === -1 ? 'left' : 'right';
+
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        keys[key] = true;
+        move(direction); // 即座に1回移動
+        dasTimer = 0;
+        arrCounter = 0;
+    });
+
+    btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        keys[key] = false;
+        dasTimer = 0;
+        arrCounter = 0;
+    });
+
+    btn.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        keys[key] = false;
+        dasTimer = 0;
+        arrCounter = 0;
+    });
+}
 
 // 初期化
 function init() {
@@ -77,27 +128,40 @@ function init() {
     board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 
     // イベントリスナー
-    document.addEventListener('keydown', handleKeyPress);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
     document.getElementById('restartBtn').addEventListener('click', restart);
 
-    // モバイルコントロール
-    document.getElementById('btnLeft').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        move(-1);
-    });
-    document.getElementById('btnRight').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        move(1);
-    });
-    document.getElementById('btnRotate').addEventListener('touchstart', (e) => {
+    // モバイルコントロール - 長押し対応
+    setupTouchButton('btnLeft', -1);
+    setupTouchButton('btnRight', 1);
+
+    // 回転は単発のみ
+    let rotateBtn = document.getElementById('btnRotate');
+    rotateBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         rotate();
     });
-    document.getElementById('btnDown').addEventListener('touchstart', (e) => {
+
+    // 下ボタンは長押しで連続
+    let downBtn = document.getElementById('btnDown');
+    let downInterval = null;
+    downBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        moveDown();
+        keys.down = true;
     });
-    document.getElementById('btnDrop').addEventListener('touchstart', (e) => {
+    downBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        keys.down = false;
+    });
+    downBtn.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        keys.down = false;
+    });
+
+    // ドロップは単発
+    let dropBtn = document.getElementById('btnDrop');
+    dropBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         hardDrop();
     });
@@ -139,8 +203,16 @@ function restart() {
     gameOver = false;
     isPaused = false;
     dropCounter = 0;
-    dropInterval = 1000;
+    dropInterval = 700; // レベル1は700ms
     bag = [];
+
+    // 操作状態リセット
+    keys = { left: false, right: false, down: false };
+    dasTimer = 0;
+    arrCounter = 0;
+    lockTimer = 0;
+    isGrounded = false;
+    lockResets = 0;
 
     currentPiece = getNextPiece();
     nextPiece = getNextPiece();
@@ -160,10 +232,40 @@ function gameLoop(time = 0) {
     lastTime = time;
 
     if (!isPaused) {
-        dropCounter += deltaTime;
-        if (dropCounter > dropInterval) {
-            moveDown();
-            dropCounter = 0;
+        // DAS/ARR処理（左右移動）
+        if (keys.left || keys.right) {
+            dasTimer += deltaTime;
+            if (dasTimer >= dasDelay) {
+                arrCounter += deltaTime;
+                if (arrCounter >= arrInterval) {
+                    const dir = keys.left ? -1 : 1;
+                    move(dir);
+                    arrCounter = 0;
+                }
+            }
+        }
+
+        // 接地判定
+        const wasGrounded = isGrounded;
+        isGrounded = collides(currentPiece, 0, 1);
+
+        if (isGrounded) {
+            // 接地中はロックタイマーを進める
+            lockTimer += deltaTime;
+            if (lockTimer >= lockDelay || lockResets >= maxLockResets) {
+                lockPiece();
+                lockTimer = 0;
+                lockResets = 0;
+                isGrounded = false;
+            }
+        } else {
+            // 接地していない場合は通常の落下
+            const currentDropInterval = keys.down ? softDropInterval : dropInterval;
+            dropCounter += deltaTime;
+            if (dropCounter > currentDropInterval) {
+                moveDown();
+                dropCounter = 0;
+            }
         }
     }
 
@@ -301,6 +403,11 @@ function move(dir) {
     if (gameOver || isPaused) return;
     if (!collides(currentPiece, dir, 0)) {
         currentPiece.x += dir;
+        // 接地中に移動したらロックタイマーをリセット
+        if (isGrounded && lockResets < maxLockResets) {
+            lockTimer = 0;
+            lockResets++;
+        }
     }
 }
 
@@ -309,9 +416,13 @@ function moveDown() {
     if (!collides(currentPiece, 0, 1)) {
         currentPiece.y++;
         dropCounter = 0;
-    } else {
-        lockPiece();
+        // 下に移動できた場合、接地していない
+        if (isGrounded) {
+            isGrounded = false;
+            lockTimer = 0;
+        }
     }
+    // 接地した場合はgameLoopでロック処理が行われる
 }
 
 function hardDrop() {
@@ -327,6 +438,13 @@ function hardDrop() {
 function rotate() {
     if (gameOver || isPaused) return;
 
+    // 回転クールダウン（連打防止）
+    const now = performance.now();
+    if (now - lastRotateTime < rotateCooldown) {
+        return;
+    }
+    lastRotateTime = now;
+
     const originalShape = currentPiece.shape;
     const rotated = rotateMatrix(currentPiece.shape);
     currentPiece.shape = rotated;
@@ -341,6 +459,11 @@ function rotate() {
         currentPiece.shape = originalShape;
     } else {
         currentPiece.x += offset;
+        // 接地中に回転したらロックタイマーをリセット
+        if (isGrounded && lockResets < maxLockResets) {
+            lockTimer = 0;
+            lockResets++;
+        }
     }
 }
 
@@ -377,6 +500,11 @@ function lockPiece() {
     currentPiece = nextPiece;
     nextPiece = getNextPiece();
 
+    // ロック状態をリセット
+    lockTimer = 0;
+    lockResets = 0;
+    isGrounded = false;
+
     // ゲームオーバー判定
     if (collides(currentPiece, 0, 0)) {
         gameOver = true;
@@ -409,7 +537,8 @@ function clearLines() {
         const newLevel = Math.floor(lines / 10) + 1;
         if (newLevel > level) {
             level = newLevel;
-            dropInterval = Math.max(100, 1000 - (level - 1) * 100);
+            // レベル1: 700ms、レベルごとに85ms短縮、下限120ms
+            dropInterval = Math.max(120, 700 - (level - 1) * 85);
         }
 
         updateScore();
@@ -423,22 +552,32 @@ function updateScore() {
     document.getElementById('level').textContent = level;
 }
 
-// キーボード操作
-function handleKeyPress(e) {
+// キーボード操作 - KeyDown
+function handleKeyDown(e) {
     if (gameOver) return;
 
     switch(e.key) {
         case 'ArrowLeft':
             e.preventDefault();
-            move(-1);
+            if (!keys.left) {
+                keys.left = true;
+                move(-1); // 即座に1回移動
+                dasTimer = 0;
+                arrCounter = 0;
+            }
             break;
         case 'ArrowRight':
             e.preventDefault();
-            move(1);
+            if (!keys.right) {
+                keys.right = true;
+                move(1); // 即座に1回移動
+                dasTimer = 0;
+                arrCounter = 0;
+            }
             break;
         case 'ArrowDown':
             e.preventDefault();
-            moveDown();
+            keys.down = true;
             break;
         case 'ArrowUp':
             e.preventDefault();
@@ -452,6 +591,25 @@ function handleKeyPress(e) {
         case 'P':
             e.preventDefault();
             togglePause();
+            break;
+    }
+}
+
+// キーボード操作 - KeyUp
+function handleKeyUp(e) {
+    switch(e.key) {
+        case 'ArrowLeft':
+            keys.left = false;
+            dasTimer = 0;
+            arrCounter = 0;
+            break;
+        case 'ArrowRight':
+            keys.right = false;
+            dasTimer = 0;
+            arrCounter = 0;
+            break;
+        case 'ArrowDown':
+            keys.down = false;
             break;
     }
 }

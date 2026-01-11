@@ -12,6 +12,7 @@ body {
     justify-content: center;
     align-items: center;
     padding: 10px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
 }
 
 .container {
@@ -160,33 +161,35 @@ header h1 {
 .mobile-controls {
     display: none;
     flex-direction: column;
-    gap: 10px;
-    max-width: 400px;
+    gap: 15px;
+    max-width: 450px;
     margin: 0 auto;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .controls-row {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     justify-content: center;
 }
 
 .control-btn {
     background: rgba(255, 255, 255, 0.9);
-    border: 2px solid #667eea;
-    border-radius: 10px;
-    padding: 15px;
-    font-size: 1.5rem;
+    border: 3px solid #667eea;
+    border-radius: 12px;
+    padding: 18px;
+    font-size: 1.6rem;
     font-weight: bold;
     color: #667eea;
     cursor: pointer;
-    min-width: 70px;
-    min-height: 70px;
+    min-width: 80px;
+    min-height: 80px;
     transition: all 0.1s;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     user-select: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .control-btn:active {
@@ -197,7 +200,7 @@ header h1 {
 
 .control-btn-wide {
     flex: 1;
-    min-width: 150px;
+    min-width: 180px;
 }
 
 /* レスポンシブデザイン */
@@ -254,18 +257,30 @@ header h1 {
         font-size: 1.5rem;
     }
 
+    .info-box {
+        padding: 10px;
+    }
+
     .info-box .value {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
     }
 
     .info-box h3 {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
     }
 
     .control-btn {
-        min-width: 60px;
-        min-height: 60px;
-        padding: 10px;
-        font-size: 1.2rem;
+        min-width: 70px;
+        min-height: 70px;
+        padding: 12px;
+        font-size: 1.3rem;
+    }
+
+    .mobile-controls {
+        gap: 12px;
+    }
+
+    .controls-row {
+        gap: 12px;
     }
 }
