@@ -7,27 +7,34 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
+    min-height: 100svh;
+    height: 100svh;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px;
-    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    padding: 8px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    overflow: hidden;
 }
 
 .container {
     width: 100%;
     max-width: 900px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 header {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
 }
 
 header h1 {
     color: white;
-    font-size: 3rem;
+    font-size: 2.2rem;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     font-weight: bold;
 }
@@ -35,9 +42,11 @@ header h1 {
 .game-area {
     display: flex;
     justify-content: center;
-    gap: 20px;
-    margin-bottom: 20px;
+    gap: 15px;
+    margin-bottom: 10px;
     flex-wrap: wrap;
+    flex-shrink: 1;
+    min-height: 0;
 }
 
 .side-panel {
@@ -48,21 +57,21 @@ header h1 {
 
 .info-box {
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 10px;
-    padding: 15px;
+    border-radius: 8px;
+    padding: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    min-width: 140px;
+    min-width: 110px;
 }
 
 .info-box h3 {
-    font-size: 1rem;
+    font-size: 0.85rem;
     color: #667eea;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     text-align: center;
 }
 
 .info-box .value {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: bold;
     color: #333;
     text-align: center;
@@ -161,29 +170,30 @@ header h1 {
 .mobile-controls {
     display: none;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
     max-width: 450px;
     margin: 0 auto;
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    flex-shrink: 0;
 }
 
 .controls-row {
     display: flex;
-    gap: 15px;
+    gap: 10px;
     justify-content: center;
 }
 
 .control-btn {
     background: rgba(255, 255, 255, 0.9);
-    border: 3px solid #667eea;
-    border-radius: 12px;
-    padding: 18px;
-    font-size: 1.6rem;
+    border: 2px solid #667eea;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 1.3rem;
     font-weight: bold;
     color: #667eea;
     cursor: pointer;
-    min-width: 80px;
-    min-height: 80px;
+    min-width: 65px;
+    min-height: 65px;
     transition: all 0.1s;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     user-select: none;
@@ -200,25 +210,32 @@ header h1 {
 
 .control-btn-wide {
     flex: 1;
-    min-width: 180px;
+    min-width: 140px;
 }
 
 /* レスポンシブデザイン */
 @media (max-width: 768px) {
+    header {
+        margin-bottom: 8px;
+    }
+
     header h1 {
-        font-size: 2rem;
+        font-size: 1.6rem;
     }
 
     .game-area {
         flex-direction: column;
         align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
     }
 
     .left-panel {
         order: 2;
         flex-direction: row;
         width: 100%;
-        max-width: 400px;
+        max-width: 100%;
+        gap: 8px;
     }
 
     .canvas-container {
@@ -229,12 +246,23 @@ header h1 {
         order: 3;
         flex-direction: row;
         width: 100%;
-        max-width: 400px;
+        max-width: 100%;
+        gap: 8px;
     }
 
     .info-box {
         flex: 1;
         min-width: auto;
+        padding: 8px;
+    }
+
+    .info-box h3 {
+        font-size: 0.75rem;
+        margin-bottom: 4px;
+    }
+
+    .info-box .value {
+        font-size: 1.2rem;
     }
 
     .controls-help {
@@ -247,40 +275,122 @@ header h1 {
 
     #gameCanvas {
         width: 100%;
-        max-width: 300px;
+        max-width: 250px;
         height: auto;
+    }
+
+    #nextCanvas {
+        width: 90px;
+        height: 90px;
     }
 }
 
 @media (max-width: 480px) {
+    body {
+        padding: 5px;
+        padding-bottom: max(5px, env(safe-area-inset-bottom));
+    }
+
+    header {
+        margin-bottom: 5px;
+    }
+
     header h1 {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
+    }
+
+    .game-area {
+        gap: 6px;
+        margin-bottom: 6px;
     }
 
     .info-box {
-        padding: 10px;
+        padding: 6px 8px;
     }
 
     .info-box .value {
-        font-size: 1.3rem;
+        font-size: 1.1rem;
     }
 
     .info-box h3 {
-        font-size: 0.85rem;
+        font-size: 0.7rem;
+        margin-bottom: 3px;
     }
 
     .control-btn {
-        min-width: 70px;
-        min-height: 70px;
-        padding: 12px;
-        font-size: 1.3rem;
+        min-width: 60px;
+        min-height: 60px;
+        padding: 10px;
+        font-size: 1.2rem;
     }
 
     .mobile-controls {
-        gap: 12px;
+        gap: 8px;
     }
 
     .controls-row {
-        gap: 12px;
+        gap: 8px;
+    }
+
+    #gameCanvas {
+        max-width: 220px;
+    }
+
+    #nextCanvas {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+/* 縦長画面（高さが足りない場合）の追加調整 */
+@media (max-height: 750px) and (max-width: 480px) {
+    header h1 {
+        font-size: 1.2rem;
+    }
+
+    header {
+        margin-bottom: 3px;
+    }
+
+    .game-area {
+        gap: 5px;
+        margin-bottom: 5px;
+    }
+
+    .info-box {
+        padding: 5px 6px;
+    }
+
+    .info-box h3 {
+        font-size: 0.65rem;
+        margin-bottom: 2px;
+    }
+
+    .info-box .value {
+        font-size: 1rem;
+    }
+
+    .control-btn {
+        min-width: 55px;
+        min-height: 55px;
+        padding: 8px;
+        font-size: 1.1rem;
+    }
+
+    .mobile-controls {
+        gap: 6px;
+    }
+
+    .controls-row {
+        gap: 6px;
+    }
+
+    #gameCanvas {
+        max-width: 200px;
+    }
+
+    #nextCanvas {
+        width: 70px;
+        height: 70px;
     }
 }

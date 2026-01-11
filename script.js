@@ -89,6 +89,11 @@ let maxLockResets = 15; // 無限回避防止
 // ソフトドロップ速度
 let softDropInterval = 50;
 
+// ライン消去エフェクト
+let clearingLines = [];
+let clearAnimationTimer = 0;
+let clearAnimationDuration = 200; // 200msのアニメーション
+
 // タッチボタンのセットアップ（DAS/ARR対応）
 function setupTouchButton(btnId, direction) {
     const btn = document.getElementById(btnId);
@@ -214,6 +219,10 @@ function restart() {
     isGrounded = false;
     lockResets = 0;
 
+    // エフェクトリセット
+    clearingLines = [];
+    clearAnimationTimer = 0;
+
     currentPiece = getNextPiece();
     nextPiece = getNextPiece();
 
@@ -232,39 +241,51 @@ function gameLoop(time = 0) {
     lastTime = time;
 
     if (!isPaused) {
-        // DAS/ARR処理（左右移動）
-        if (keys.left || keys.right) {
-            dasTimer += deltaTime;
-            if (dasTimer >= dasDelay) {
-                arrCounter += deltaTime;
-                if (arrCounter >= arrInterval) {
-                    const dir = keys.left ? -1 : 1;
-                    move(dir);
-                    arrCounter = 0;
-                }
-            }
-        }
-
-        // 接地判定
-        const wasGrounded = isGrounded;
-        isGrounded = collides(currentPiece, 0, 1);
-
-        if (isGrounded) {
-            // 接地中はロックタイマーを進める
-            lockTimer += deltaTime;
-            if (lockTimer >= lockDelay || lockResets >= maxLockResets) {
-                lockPiece();
-                lockTimer = 0;
-                lockResets = 0;
-                isGrounded = false;
+        // ライン消去アニメーション中
+        if (clearingLines.length > 0) {
+            clearAnimationTimer += deltaTime;
+            if (clearAnimationTimer >= clearAnimationDuration) {
+                // アニメーション終了、実際にラインを削除
+                completeClearLines();
+                clearingLines = [];
+                clearAnimationTimer = 0;
             }
         } else {
-            // 接地していない場合は通常の落下
-            const currentDropInterval = keys.down ? softDropInterval : dropInterval;
-            dropCounter += deltaTime;
-            if (dropCounter > currentDropInterval) {
-                moveDown();
-                dropCounter = 0;
+            // 通常のゲームロジック
+            // DAS/ARR処理（左右移動）
+            if (keys.left || keys.right) {
+                dasTimer += deltaTime;
+                if (dasTimer >= dasDelay) {
+                    arrCounter += deltaTime;
+                    if (arrCounter >= arrInterval) {
+                        const dir = keys.left ? -1 : 1;
+                        move(dir);
+                        arrCounter = 0;
+                    }
+                }
+            }
+
+            // 接地判定
+            const wasGrounded = isGrounded;
+            isGrounded = collides(currentPiece, 0, 1);
+
+            if (isGrounded) {
+                // 接地中はロックタイマーを進める
+                lockTimer += deltaTime;
+                if (lockTimer >= lockDelay || lockResets >= maxLockResets) {
+                    lockPiece();
+                    lockTimer = 0;
+                    lockResets = 0;
+                    isGrounded = false;
+                }
+            } else {
+                // 接地していない場合は通常の落下
+                const currentDropInterval = keys.down ? softDropInterval : dropInterval;
+                dropCounter += deltaTime;
+                if (dropCounter > currentDropInterval) {
+                    moveDown();
+                    dropCounter = 0;
+                }
             }
         }
     }
@@ -298,11 +319,32 @@ function drawBoard() {
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
             if (board[y][x]) {
-                ctx.fillStyle = board[y][x];
-                ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                // 消去中のラインは明滅エフェクト
+                if (clearingLines.includes(y)) {
+                    const progress = clearAnimationTimer / clearAnimationDuration;
+                    const flashCount = 3;
+                    const flash = Math.sin(progress * Math.PI * flashCount) > 0;
+
+                    if (flash) {
+                        ctx.fillStyle = '#ffffff';
+                    } else {
+                        ctx.fillStyle = board[y][x];
+                    }
+
+                    // フェードアウト
+                    ctx.globalAlpha = 1 - progress;
+                    ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    ctx.globalAlpha = 1;
+                } else {
+                    ctx.fillStyle = board[y][x];
+                    ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                }
             }
         }
     }
@@ -493,55 +535,84 @@ function lockPiece() {
         }
     }
 
-    // ライン消去チェック
-    clearLines();
-
-    // 次のピース
-    currentPiece = nextPiece;
-    nextPiece = getNextPiece();
-
     // ロック状態をリセット
     lockTimer = 0;
     lockResets = 0;
     isGrounded = false;
+
+    // ライン消去チェック
+    clearLines();
+
+    // 消去するラインがなければすぐに次のピース
+    if (clearingLines.length === 0) {
+        spawnNextPiece();
+    }
+}
+
+// ライン消去（アニメーション開始）
+function clearLines() {
+    clearingLines = [];
+
+    // 揃ったラインを検出
+    for (let y = ROWS - 1; y >= 0; y--) {
+        if (board[y].every(cell => cell !== 0)) {
+            clearingLines.push(y);
+        }
+    }
+
+    // 消去するラインがあればアニメーション開始
+    if (clearingLines.length > 0) {
+        clearAnimationTimer = 0;
+    }
+}
+
+// ライン消去完了（実際の削除とスコア計算）
+function completeClearLines() {
+    const linesCleared = clearingLines.length;
+
+    // 上から下に向かって処理（インデックスのズレを防ぐ）
+    clearingLines.sort((a, b) => a - b);
+    for (let i = 0; i < clearingLines.length; i++) {
+        const y = clearingLines[i];
+        board.splice(y, 1);
+        board.unshift(Array(COLS).fill(0));
+        // 削除後は後続のインデックスを調整
+        for (let j = i + 1; j < clearingLines.length; j++) {
+            clearingLines[j]--;
+        }
+    }
+
+    // スコア加算
+    lines += linesCleared;
+
+    // スコア計算（1ライン: 100, 2ライン: 300, 3ライン: 500, 4ライン: 800）
+    const points = [0, 100, 300, 500, 800];
+    score += points[linesCleared] * level;
+
+    // レベルアップ（10ラインごと）
+    const newLevel = Math.floor(lines / 10) + 1;
+    if (newLevel > level) {
+        level = newLevel;
+        // レベル1: 700ms、レベルごとに85ms短縮、下限120ms
+        dropInterval = Math.max(120, 700 - (level - 1) * 85);
+    }
+
+    updateScore();
+
+    // アニメーション終了後、次のピースを生成
+    spawnNextPiece();
+}
+
+// 次のピースを生成
+function spawnNextPiece() {
+    currentPiece = nextPiece;
+    nextPiece = getNextPiece();
 
     // ゲームオーバー判定
     if (collides(currentPiece, 0, 0)) {
         gameOver = true;
         document.getElementById('finalScore').textContent = score;
         document.getElementById('gameOver').classList.remove('hidden');
-    }
-}
-
-// ライン消去
-function clearLines() {
-    let linesCleared = 0;
-
-    for (let y = ROWS - 1; y >= 0; y--) {
-        if (board[y].every(cell => cell !== 0)) {
-            board.splice(y, 1);
-            board.unshift(Array(COLS).fill(0));
-            linesCleared++;
-            y++; // 同じ行を再チェック
-        }
-    }
-
-    if (linesCleared > 0) {
-        lines += linesCleared;
-
-        // スコア計算（1ライン: 100, 2ライン: 300, 3ライン: 500, 4ライン: 800）
-        const points = [0, 100, 300, 500, 800];
-        score += points[linesCleared] * level;
-
-        // レベルアップ（10ラインごと）
-        const newLevel = Math.floor(lines / 10) + 1;
-        if (newLevel > level) {
-            level = newLevel;
-            // レベル1: 700ms、レベルごとに85ms短縮、下限120ms
-            dropInterval = Math.max(120, 700 - (level - 1) * 85);
-        }
-
-        updateScore();
     }
 }
 
